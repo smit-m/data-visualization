@@ -1,8 +1,9 @@
 ---
 title: "HW08_Clustering"
 output:
-  pdf_document: default
+  html_document: default
   html_notebook: default
+  pdf_document: default
 ---
 
 **Smit Mehta**  
@@ -29,8 +30,7 @@ Using the categorized features to develop a Kmeans Clustering model(with k=2)
 
 ##Reading in the data
 
-```{r}
-
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 a <- read.csv("bribe.csv")
 b <- read.csv("electricity.csv")
 c <- read.csv("female_firms.csv")
@@ -48,7 +48,7 @@ temp <- a[, c(1,2)]
 
 ##Data Preparation
 
-```{r}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 a <- na.omit(a)
 b <- na.omit(b)
 c <- na.omit(c)
@@ -98,33 +98,72 @@ sadc <- subset(temp12, Country_Code == "AGO" | Country_Code == "BWA" | Country_C
 sadc$GPI_2016 <- NULL
 
 #Transforming the variables
+sadc$Bribery_Incindents_2016 <- sadc$Bribery_Incindents_2016*0.01
+sadc$Bribery_Incindents_2016[is.na(sadc$Bribery_Incindents_2016)] <- 0
 
+sadc$Access_Electricity_2014 <- sadc$Access_Electricity_2014*0.01
+
+
+sadc$Female_Firms_2016 <- sadc$Female_Firms_2016*0.01
+sadc$Female_Firms_2016[is.na(sadc$Female_Firms_2016)] <- 0
+
+sadc$GNI_norm <- (sadc$GNI_2016 - min(sadc$GNI_2016, na.rm = TRUE))/(max(sadc$GNI_2016, na.rm = TRUE) - min(sadc$GNI_2016, na.rm = TRUE))
+sadc$GNI_2016 <- NULL
+sadc$GNI_norm[is.na(sadc$GNI_norm)] <- 0
+
+sadc$fertility_norm <- (sadc$Adolescent_fertility_2015 - min(sadc$Adolescent_fertility_2015, na.rm = TRUE))/(max(sadc$Adolescent_fertility_2015, na.rm = TRUE) - min(sadc$Adolescent_fertility_2015, na.rm = TRUE))
+sadc$Adolescent_fertility_2015 <- NULL
+
+sadc$gdp_norm <- (sadc$GDP_2016 - min(sadc$GDP_2016, na.rm = TRUE))/(max(sadc$GDP_2016, na.rm = TRUE) - min(sadc$GDP_2016, na.rm = TRUE))
+sadc$GDP_2016 <- NULL
+
+
+
+sadc$HIV_2016 <- sadc$HIV_2016*0.01
+sadc$HIV_2016[is.na(sadc$HIV_2016)] <- 0
+
+sadc$HIV2_2016 <- sadc$HIV2_2016*0.01
+sadc$HIV2_2016[is.na(sadc$HIV2_2016)] <- 0
+
+sadc$Maternal_Death_2015 <- sadc$Maternal_Death_2015*0.001
+sadc$Maternal_Death_2015[is.na(sadc$Maternal_Death_2015)] <- 0
+
+sadc$pop_norm <- (sadc$Tot_Population - min(sadc$Tot_Population, na.rm = TRUE))/(max(sadc$Tot_Population, na.rm = TRUE) - min(sadc$Tot_Population, na.rm = TRUE))
+sadc$Tot_Population <- NULL
+
+sadc$Unemp_2016 <- sadc$Unemp_2016*0.01
+sadc$Unemp_2016[is.na(sadc$Unemp_2016)] <- 0
+
+
+
+sadc_f <- sadc[, c(3:13)]
+rownames(sadc_f) <- sadc$Country
 
 ```
 
 
 ##Creating and visualizing the Distance matrix
 
-```{r}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
 library(cluster)    # clustering algorithms
 library(factoextra) # clustering algorithms & visualization
 
-distance <- get_dist(bc3)
+distance <- get_dist(sadc_f)
 fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
 ```
 
 ##kmeans clustering for k=2
 
-```{r}
-k2 <- kmeans(bc3, centers = 2, nstart = 25)
-#str(k2)
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+sadc_cluster <- kmeans(sadc_f, centers = 3, nstart = 25)
+#str(sadc_cluster)
 ```
 
 
 ##Generating visualization
 
-```{r}
-fviz_cluster(k2, data = bc3)
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+fviz_cluster(sadc_cluster, data = sadc_f)
 ```
 
 
