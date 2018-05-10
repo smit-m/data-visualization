@@ -1,0 +1,215 @@
+---
+title: "An Approach to creating impactful UNDP programs in SADC countries"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+
+**FE550: Data Visualization**  
+**Yang Zhao**  
+**Smit Mehta**  
+**Wei Cui**  
+**Lan Zhang**  
+**Xi Chen**  
+
+  
+
+
+##Introduction
+>*“United Nations Development Programme or UNDP works in about 170 countries and territories, helping to achieve the eradication of poverty, and the reduction of inequalities and exclusion. We help countries to develop policies, leadership skills, partnering abilities, institutional capabilities and build resilience in order to sustain development results.”*
+
+This is the description provided on the official website of the United Nations Development Programme. Over the past couple of decades, the UNDP has been instrumental in uplifting the socio-economically challenged regions in the world. It has done so by working on projects attacking specific challenges faced by the regions and developing tailor-made programs.  
+  
+Anchored in the 2030 Agenda for Sustainable Development and committed to the principles of universality, equality and leaving no one behind, the UNDP vision for the Strategic Plan, 2018-2021 is to help countries achieve sustainable development by eradicating poverty in all its forms and dimensions, accelerating structural transformations for sustainable development and building resilience to crises and shocks.
+
+The United Nations Development Program (UNDP) is the United Nations&#39; global development network. UNDP advocates for change and connects countries to knowledge, experience and resources to help people build a better life.
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 10}
+#Revolving Globe comes here
+
+library(plotly)
+
+hdi_map <- read.csv("HDI_map.csv")
+
+# light grey boundaries
+l <- list(color = toRGB("grey"), width = 0.5)
+
+# specify map projection/options
+g1 <- list(
+  showframe = FALSE,
+  showcoastlines = FALSE,
+  projection = list(
+    type = 'orthographic',
+    rotation = list(
+      lon = 0,
+      lat = 0,
+      roll = 0
+    )))
+
+p <- plot_geo(hdi_map) %>%
+  add_trace(
+    z = ~HDI, colors = 'Blues', name = 'HDI',
+    text = ~Country, locations = ~Country_Code, marker = list(line = l)
+  ) %>%
+  colorbar() %>%
+  layout(
+    title = 'HDI around the World!',
+    geo = g1
+  )
+
+p
+```
+
+
+##Problem Area
+When nations around the globe are coming together to provide funding and resources, it is important to understand effectiveness of the programs being undertaken. Would it be possible to prioritize the countries that need funding and also would it be possible to focus on the proportional allocation? Our project aims to address the following questions:  
+  - Understanding the inflow of funding over time, which countries donate more and which countries receive more?  
+  - Is a positive change observed in the development indices with increasing funding?  
+  - Does the development index change proportionally with investment and participation from more countries?  
+  - Can we identify the recipe for success in effective programs and replicate it for other countries?
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+#graph with Who is sending the money where
+donor_map <- read.csv("donor_map.csv")
+airports <- read.csv("airports.csv")
+# Plot flight routes
+library(ggplot2)
+library(ggrepel)
+worldmap <- borders("world", colour="#efede1", fill="#efede1") # create a layer of borders
+p <- ggplot() + worldmap + 
+  geom_curve(data=donor_map, aes(x = lon.x, y = lat.x, xend = lon.y, yend = lat.y, color = Group), size = 1, curvature = .3, alpha = 0.3) + 
+  geom_point(data=airports, aes(x = lon, y = lat), col = "#970027") + 
+  geom_text_repel(data=airports, aes(x = lon, y = lat, label = airport), col = "black", size = 3, segment.color = NA) + 
+  theme(panel.background = element_rect(fill="white"), 
+        axis.line = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()
+  )
+p
+
+```
+
+
+##Exploratory Data Analysis
+After taking a closer look, we found that data is available at an aggregated donor level and hence it would be difficult to perform some of the initially planned analyses. The following graphics illustrate how the different measurement metrics have been impacting over the years and with increasing funding and help
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+#Yang's graphs come here
+
+library(ggplot2)
+library(plotly)
+
+#HDI
+hdi <- read.csv("HDI.csv")
+q <- ggplot(hdi,aes(x=Year,y=HDI,colour=Country,group=Country)) + geom_line() + geom_point() + labs(x = "Years", y = "HDI") + ggtitle("HDI over the years")
+ggplotly(q)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+library(ggplot2)
+library(plotly)
+#Schooling
+school <- read.csv("Schooling.csv")
+q <- ggplot(school,aes(x=Year,y=ExpectedYearsofSchooling,colour=Country,group=Country)) + geom_line() + geom_point() + labs(x = "Years", y = "Expected Years of Schooling (years)") + ggtitle("Expected Years of Schooling over the years")
+ggplotly(q)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+library(ggplot2)
+library(plotly)
+#HIV prevalence
+hiv <- read.csv("HIV.csv")
+q <- ggplot(hiv,aes(x=Year,y=HIVprevalenceofadult,colour=Country,group=Country)) + geom_line() + geom_point() + labs(x = "Years", y = "HIV prevalence of adult (% ages 15-49)") + ggtitle("HIV prevalence of adult over the years")
+ggplotly(q)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+library(ggplot2)
+library(plotly)
+#GII
+GII <- read.csv("GII.csv")
+q <- ggplot(GII,aes(x=Year,y=GenderInequalityIndex,colour=Country,group=Country)) + geom_line() + geom_point() + labs(x = "Years", y = "Gender Inequality Index") + ggtitle("Gender Inequality Index over the years")
+ggplotly(q)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+library(ggplot2)
+library(plotly)
+#Unemployment
+unemp <- read.csv("Unemp.csv")
+q <- ggplot(unemp,aes(x=Year,y=TotalUnemploymentRate,colour=Country,group=Country)) + geom_line() + geom_point() + labs(x = "Years", y = "Total unemployment rate (% of labour force)") + ggtitle("Total Unemployment over the years")
+ggplotly(q)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+library(ggplot2)
+library(plotly)
+#Life Expectancy Index
+life <- read.csv("LEI.csv")
+q <- ggplot(life,aes(x=Year,y=LifeExpectancyIndex,colour=Country,group=Country)) + geom_line() + geom_point() + labs(x = "Years", y = "Life expectancy Index") + ggtitle("Life Expectancy over the years")
+ggplotly(q)
+```
+
+
+
+##Proposed Solution
+Using the available data, the idea is to find countries that are similar to each other. This way, successful programs in one country can be replicated in a **_similar country_**.
+  
+We are using the kmeans clustering algorithm to find the countries that are closer to each other than others by calculating the Euclidean distance between them.
+    
+Some of the country-specific factors we have looked at are:  
+ - Population    
+ - Access to electricity (% of total population)  
+ - Adolescent fertility rate (births per 1,000 women ages 15-19)  
+ - Bribery incidence (% of firms experiencing at least one bribe payment request)  
+ - Firms with female participation in ownership (% of firms)  
+ - GNI (constant 2010 USD)      
+ - GDP per capita (constant 2010 USD)    
+ - Incidence of HIV (% of uninfected population ages 15-49)  
+ - Literacy rate, youth (ages 15-24), gender parity index (GPI) #Dropped later on (only 1 value)  
+ - Maternal mortality ratio (modeled estimate, per 100,000 live births)  
+ - Prevalence of HIV, total (% of population ages 15-49)  
+ - Unemployment, total (% of total labor force) (modeled ILO estimate)  
+ 
+      
+The distance matrix can be formed as below:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+#Clustering comes here
+sadc <- read.csv("sadc_clustering.csv")
+sadc_f <- sadc[, c(3:13)]
+rownames(sadc_f) <- sadc$Country
+
+library(cluster)    # clustering algorithms
+library(factoextra) # clustering algorithms & visualization
+distance <- get_dist(sadc_f)
+fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+
+
+```
+
+  
+    
+      
+Next step is to cluster these countries in the desired number of clusters. Here we are considering 3 clusters. This can be easily changed by modifying the `centers` parameter in the kmeans function call
+   
+>As per the clusters formed below, we can fairly assume that Mozambique, Malawi, and Zimbabwe would have similar reactionary outcomes (cluster family 1), while Botswana, and Namibia would behave similarly. It can be seen that South Africa is in its own league!
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 9}
+sadc_cluster <- kmeans(sadc_f, centers = 3, nstart = 15)
+fviz_cluster(sadc_cluster, data = sadc_f)
+```
+
+
+##Future Scope
+
+We see 2 separate off-shoots from this project:  
+  - Replicating this model for other such groups of countries, say Latin America, the OECD countries and more  
+  - The next logical step in the project of finding the correct allocation of funds for the different programs. Various **Optimization** techniques can be used to find out the countries that need the funding more than others and by how much
+
+
