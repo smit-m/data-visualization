@@ -1,4 +1,3 @@
-# data-visualization-fe550
+# data-visualization
 
-For the FE550 course
-This document will be used to track all the pieces of code while work is in progress
+Contains my work in data visualization, primarily for assignments as well as personal side projects
