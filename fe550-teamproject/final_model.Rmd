@@ -26,8 +26,6 @@ Anchored in the 2030 Agenda for Sustainable Development and committed to the pri
 The United Nations Development Program (UNDP) is the United Nations&#39; global development network. UNDP advocates for change and connects countries to knowledge, experience and resources to help people build a better life.
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 10}
-#Revolving Globe comes here
-
 library(plotly)
 
 hdi_map <- read.csv("HDI_map.csv")
@@ -70,7 +68,7 @@ When nations around the globe are coming together to provide funding and resourc
   - Can we identify the recipe for success in effective programs and replicate it for other countries?
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
-#graph with Who is sending the money where
+
 donor_map <- read.csv("donor_map.csv")
 airports <- read.csv("airports.csv")
 # Plot flight routes
@@ -97,7 +95,7 @@ p
 ##Exploratory Data Analysis
 After taking a closer look, we found that data is available at an aggregated donor level and hence it would be difficult to perform some of the initially planned analyses. The following graphics illustrate how the different measurement metrics have been impacting over the years and with increasing funding and help
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
-#Yang's graphs come here
+
 
 library(ggplot2)
 library(plotly)
