@@ -1,0 +1,270 @@
+---
+title: "Predicting Homicide Victim-Offender Relationship"
+output:
+  html_document: default
+  html_notebook: default
+---
+  
+
+
+**FE550: Data Visualization**  
+**Smit Mehta**  
+**Prof. Brian Moriarty**  
+
+  
+    
+    
+
+#Introduction
+>*“It is very easy to create a prediction algorithm to prevent crime from happening in the future. However, it becomes very difficult to predict how long it would take to solve committed crime. Some are open and shut cases, while some remain unsolved for years. The motivation behind this project is to aid the homicide detectives by providing a reference point for their investigation and narrow down their suspect pool. The problem at hand, then becomes very straightforward: can a relationship between a victim and her offender be established using the available data?"*
+  
+The data for this project was sourced from the Supplementary Homicide Report that is published by the FBI
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+df <- read.csv("SHR76_16.csv", stringsAsFactors = FALSE)
+
+#Removing the unnecessary columns 
+df <- df[, c(1, 4, 8, 9, 11, 14:29)]
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+#Modifying VicAge, OffAge, and the state name for RhodeIsland
+df$OffAge <- ifelse(df$OffAge == "Offender unknown", 999, ifelse(df$OffAge == "99 years old or more", 99, as.numeric(df$OffAge)))
+#str(df$OffAge)
+#unique(df$OffAge)
+#summary(df$OffAge)
+
+
+df$VicAge <- ifelse(df$VicAge == "Age unknown", 999, ifelse(df$VicAge == "99 years old or more", 99, ifelse(df$VicAge == "Newborn or infant", 0, as.numeric(df$VicAge))))
+#str(df$VicAge)
+#unique(df$VicAge)
+#summary(df$VicAge)
+
+df[df$State == "Rhodes Island", "State"] <- "Rhode Island"
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+pop <- read.csv("population.csv", stringsAsFactors = F)
+states_abb <- read.csv("states_abb.csv")
+
+```
+
+
+#Glimpse into the number of Homicides over the years
+When we plot the total number of homicides, both solved as well as unsolved, it is important to note that while the global maximum occured some time ago (in 1993) the number of unsolved cases has remained fairly consistent
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+library(dplyr)
+library(ggplot2)
+Homicides_year <- df %>% group_by(Year, Solved) %>% summarise(Tot_Homicides = length(ID)) %>% arrange(Year, Solved)
+Homicides_year <- Homicides_year[order(Homicides_year$Solved, decreasing=F) , ]
+
+ggplot(Homicides_year, aes(x=Year, y=Tot_Homicides, fill=Solved)) + geom_area(alpha=0.6 , size=1, colour="black")
+```
+
+
+#Let's see how the states are fairing
+A simple heat map of homicides per 100k population shows the states like Loiusiana, Alabama, and even though its not visible, District of Columbia as the big losers
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+library(maps)
+
+#State Level Homicides
+state_year_homi <- df %>% group_by(State, Year) %>% summarise(Tot_Homicides = length(ID))
+state_homi <- df %>% group_by(State) %>% summarise(Tot_Homicides = length(ID))
+
+state_homi$Avg_Homicides <- state_homi$Tot_Homicides/41
+state_homicides <- merge(state_homi, pop, by = "State", all.x = TRUE)
+state_homicides$Homicides_Per_100000 <- 100000*state_homicides$Avg_Homicides/state_homicides$Population
+
+state_homicides$region <- tolower(state_homicides$State)
+states <- map_data("state")
+map.df <- merge(states, state_homicides, by="region", all.x=T)
+map.df <- map.df[order(map.df$order),]
+
+map_df <- merge(map.df, states_abb, by = "State", all.x = TRUE)
+
+snames <- data.frame(region=tolower(state.name), long=state.center$x, lat=state.center$y)
+snames <- merge(snames, map_df, by="region")
+
+ggplot(map_df, aes(x=long,y=lat,group=group))+
+  geom_polygon(aes(fill=Homicides_Per_100000))+
+  geom_path()+ 
+  scale_fill_gradient(low = "white", high = "red") + 
+  geom_text(data=snames, aes(long.x, lat.x, label=Abb))
+```
+
+  
+    
+However, states like New York, District of Columbia, Maryland, Illinois, and California are leading the pact in terms of unsolved crimes
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+sub <- subset(df, Solved == "No")
+state_unsolved_homi <- sub %>% group_by(State) %>% summarise(Tot_Unsolved_Homicides = length(ID))
+state_unsolved_homicides <- merge(state_unsolved_homi, state_homi, by = "State")
+state_unsolved_homicides$Avg_Homicides <- NULL
+state_unsolved_homicides$Unsolved_Pct <- state_unsolved_homicides$Tot_Unsolved_Homicides/state_unsolved_homicides$Tot_Homicides
+
+state_unsolved_homicides$region <- tolower(state_unsolved_homicides$State)
+states <- map_data("state")
+map.df_unsolved <- merge(states, state_unsolved_homicides, by="region", all.x=T)
+map.df_unsolved <- map.df_unsolved[order(map.df$order),]
+
+
+map_df_unsolved <- merge(map.df_unsolved, states_abb, by = "State", all.x = TRUE)
+
+snames <- data.frame(region=tolower(state.name), long=state.center$x, lat=state.center$y)
+snames <- merge(snames, map_df, by="region")
+
+ggplot(map_df_unsolved, aes(x=long,y=lat,group=group))+
+  geom_polygon(aes(fill=Unsolved_Pct))+
+  geom_path()+ 
+  scale_fill_gradient(low = "white", high = "red") + 
+  geom_text(data=snames, aes(long.x, lat.x, label=Abb))
+```
+  
+
+#Now let's focus on the characteristics of the people involved in the homicides
+
+##Age of the Victims
+While homicide victims occur across the age spectrum, the relatively safer years are the pre-teens and nonagenarians. There are a significant number of infants (Less than a year old) victims as well. Victims are also primarily males as seen by the significant blue chunk
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+ages <- df[!(df$VicAge == 999), ]
+ages <- ages[!(ages$OffAge == 999), ]
+
+
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+ggplot(ages,aes(x=VicAge)) +
+    geom_histogram(data=subset(ages,VicSex == 'Male'),fill = "blue", alpha = 0.3) +
+    geom_histogram(data=subset(ages,VicSex == 'Female'),fill = "red", alpha = 0.3)
+
+```
+  
+##Age of Offenders
+There is a huge possibility of committing homicide in the prime of one's youth (early 20s)
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+ggplot(ages,aes(x=OffAge)) +
+    geom_histogram(data=subset(ages,OffSex == 'Male'),fill = "blue", alpha = 0.3) +
+    geom_histogram(data=subset(ages,OffSex == 'Female'),fill = "red", alpha = 0.3)
+
+```
+
+  
+    
+##Weapons Used
+Out of a variety of weapons used for the crime, here are the top ones. Clealy handguns are the weapon of choice with almost half (49%) of the homicides being committed by handguns. What does this say about gun laws in the country?
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 5, fig.height = 5}
+library(wordcloud)
+
+weaponsCorpus <- df %>% group_by(Weapon) %>% summarise(freq = length(ID))
+wordcloud(weaponsCorpus$Weapon, freq = weaponsCorpus$freq, random.order = FALSE, colors = brewer.pal(20, "Dark2"), scale=c(2,1), rot.per=0, max.words = 20)
+
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 8}
+
+ggplot(df, aes(Weapon), position = position_stack(reverse = TRUE)) + geom_bar(aes(fill = Solved)) + coord_flip()
+
+```
+  
+    
+##Circumstances of the homicide
+Robbery and narcotics lead the circumstances for homicide. An interesting observation is the **_Lover's Triangle_** that has over 10k homicides over the years
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 12}
+circum_index <- which(df$Circumstance == "Other arguments" | df$Circumstance == "Circumstances undetermined" | df$Circumstance == "Other" | df$Circumstance == "Other - not specified")
+
+circumstances <- df[-circum_index, ]
+ggplot(circumstances, aes(Circumstance), position = position_stack(reverse = TRUE)) + geom_bar(aes(fill = Solved)) + coord_flip()
+```
+  
+  
+##Offender Race
+The graph below breaks the stereotypical bonds that a particular race is responsible more for the homicides than the other. It can be seen that either are equally likely!
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+Offender_Race <- df[!(df$OffRace == "Unknown" | df$OffSex == "Unknown"), ]
+ 
+ggplot(Offender_Race, aes(OffRace)) + geom_bar(aes(fill = OffSex))
+
+```
+
+  
+    
+##Relationship
+This is the predictor variable in the model. 
+>*"Hell hath no fury like a woman scorned"*
+Apart from acquaintances, the person most likely to kill you is your wife!
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+relationships <- df %>% filter(Relationship != "Relationship not determined")
+
+ggplot(relationships, aes(Relationship), position = position_stack(reverse = TRUE)) + geom_bar(aes(fill = "red")) + coord_flip()
+
+
+```
+
+
+#Building a decision tree model for predicting the relationship
+Using some of the variables, we can build a decision tree model to predict the relationship between a victim and offender in homicide cases. The developed model can then be used to predict the same for future cases to provide the investigators a starting point by narrowing down the suspect pool!
+  
+    
+The variables used for this model are:  
+ - Situation  
+ - Victim's Age  
+ - Victim's Sex  
+ - Victim's Race  
+ - Offender's Age  
+ - Offender's Sex  
+ - Offender's Race  
+ - Weapon Category as per calculation  
+
+>*"The model has an accuracy of about 53% which is not bad for a preliminary model with basic variables. With the addition of more meaningful variables and the increase in complexity of the model (such as random forest, ANN), the accuracy can be greatly improved!"*
+ 
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+library(rpart)
+library(rpart.plot)
+library(rattle)
+
+solved <- subset(df, Solved == "Yes")
+#Converting the predictor variable into 3 classes: Stranger, close relation, distant relation
+solved$Relation <- ifelse(solved$Relationship == "Stranger" | solved$Relationship == "Relationship not determined", "Stranger", ifelse(solved$Relationship == "Acquaintance" | solved$Relationship == "Other - known to victim", "Distant Relation", "Close Relation"))
+
+#Converting the weapon variable into weapons category variable
+solved$Weapon_Cat <- ifelse(solved$Weapon == "Shotgun" | solved$Weapon == "Rifle" | solved$Weapon == "Handgun - pistol, revolver, etc" | solved$Weapon == "Firearm, type not stated" | solved$Weapon == "Other gun", "Guns", ifelse(solved$Weapon == "Knife or cutting instrument" | solved$Weapon == "Blunt object - hammer, club, etc" | solved$Weapon == "Personal weapons, includes beating", "Weapons", "Others"))
+
+#Keeping only the important columns
+solved <- solved[, c(7:10, 12:14, 22, 23)]
+
+solved$Situation <- as.factor(solved$Situation)
+solved$VicSex <- as.factor(solved$VicSex)
+solved$VicRace <- as.factor(solved$VicRace)
+solved$OffSex <- as.factor(solved$OffSex)
+solved$OffRace <- as.factor(solved$OffRace)
+solved$Relation <- as.factor(solved$Relation)
+solved$Weapon_Cat <- as.factor(solved$Weapon_Cat)
+
+#Splitting the data into train and test
+indices <- sort(sample(nrow(solved), round(0.3*nrow(solved))))
+train <- solved[-indices, ]
+test <- solved[indices, ]
+
+#Building the model
+dt <- rpart(Relation ~ Situation + VicAge + VicSex + VicRace + OffAge + OffSex + OffRace + Weapon_Cat, data = train, method = "class")
+
+#Predicting for the test data
+predictions <- predict(dt, test, type = 'class')
+
+```
+
+##Printing the confusion matrix
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 7}
+
+table(predictions, test$Relation)
+```
+
+##Plotting the Decision Tree
+```{r, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height = 15}
+fancyRpartPlot(dt, main = "Decision Tree for predicting Homicide Relationship", sub = "")
+
+```
+
