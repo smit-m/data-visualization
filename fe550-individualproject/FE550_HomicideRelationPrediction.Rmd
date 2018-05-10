@@ -6,7 +6,6 @@ output:
 ---
   
 
-
 **FE550: Data Visualization**  
 **Smit Mehta**  
 **Prof. Brian Moriarty**  
