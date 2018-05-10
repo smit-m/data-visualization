@@ -1,5 +1,5 @@
 ---
-title: "HW08_Clustering"
+title: "Clustering"
 output:
   html_document: default
   html_notebook: default
