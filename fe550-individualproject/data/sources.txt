@@ -1,4 +1,4 @@
 Here is the list of data sources and their origins:
-1.
-2.
-3.
+1. SHR76_16.csv: The SHR report csv file sourced from the website http://www.murderdata.org/p/data-docs.html
+2. population.csv: Population of the 50 states and DC sourced from Wikipedia 
+3. states_abb.csv: State abbreviations sourced from an online source to map the state abbreviation to the state name
