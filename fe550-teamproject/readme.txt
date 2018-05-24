@@ -1,4 +1,4 @@
 To view the output:
- - Download the html output file
+ - Download the html output file (final_model.html)
  - Copy-paste the code into a txt file and save it as an html document
  - Open the newly created html file in any browser (preferable Chrome or Firefox)
